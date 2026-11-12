@@ -878,23 +878,38 @@
 
 const EJS_VERSION = '4.2.3';
 const EJS_BASE = `https://cdn.jsdelivr.net/gh/EmulatorJS/EmulatorJS@${EJS_VERSION}/data/`;
-const ROOM_PREFIX = 'fifa97gold-';
+const ROOM_PREFIX = 'g3-' + CURRENT_GAME.id + '-';   // кімнати різних ігор не перетинаються
 
 /* ---------- GAME LIBRARY ---------- */
 const GAMES = [
   // Sports
-  { id: 'fifa97',    name: 'FIFA 97 Gold',     rom: './fifa97.bin',           emoji: '⚽', genre: 'Sports',    desc: '1996 · EA Sports' },
-  { id: 'fifa98',    name: 'FIFA 98',          rom: './fifa98.bin',           emoji: '⚽', genre: 'Sports',    desc: '1997 · EA Sports' },
-  { id: 'nhl94',     name: "NHL '94",          rom: './nhl94.bin',            emoji: '🏒', genre: 'Sports',    desc: '1993 · EA Sports' },
-  { id: 'nbajam',    name: 'NBA Jam',          rom: './nba_jam.bin',          emoji: '🏀', genre: 'Sports',    desc: '1993 · Acclaim' },
-  { id: 'bullsblz',  name: 'Bulls vs Blazers', rom: './bulls_vs_blazers.bin', emoji: '🏀', genre: 'Sports',    desc: '1992 · EA Sports' },
+  { id: 'fifa97',    name: 'FIFA 97 Gold',              rom: './fifa97.bin',                                                                    emoji: '⚽', genre: 'Sports',     desc: '1996 · EA Sports' },
+  { id: 'fifa98',    name: 'FIFA 98',                   rom: './fifa98.bin',                                                                    emoji: '⚽', genre: 'Sports',     desc: '1997 · EA Sports' },
+  { id: 'fifa93',    name: 'FIFA International Soccer', rom: './FIFA%20International%20Soccer.bin',                                             emoji: '⚽', genre: 'Sports',     desc: '1993 · EA Sports' },
+  { id: 'nhl94',     name: "NHL '94",                   rom: './nhl94.bin',                                                                     emoji: '🏒', genre: 'Sports',     desc: '1993 · EA Sports' },
+  { id: 'nbajam',    name: 'NBA Jam',                   rom: './nba_jam.bin',                                                                   emoji: '🏀', genre: 'Sports',     desc: '1994 · Acclaim' },
+  { id: 'bullsblz',  name: 'Bulls vs Blazers',          rom: './bulls_vs_blazers.bin',                                                          emoji: '🏀', genre: 'Sports',     desc: '1993 · EA Sports' },
+  { id: 'olympic',   name: 'Olympic Summer Games',      rom: './Olympic%20Summer%20Games.bin',                                                  emoji: '🥇', genre: 'Sports',     desc: '1996 · Black Pearl' },
+  // Fighting
+  { id: 'mk3',       name: 'Mortal Kombat 3',           rom: './Mortal%20Kombat%203.bin',                                                       emoji: '🥋', genre: 'Fighting',   desc: '1995 · Acclaim' },
+  // Racing
+  { id: 'formula1',  name: 'Formula One',               rom: './Formula%20One%20(USA).bin',                                                     emoji: '🏎️', genre: 'Racing',     desc: '1993 · Domark' },
+  { id: 'f1gp',      name: 'F-1 Grand Prix (JPN)',      rom: './Nakajima%20Satoru%20Kanshuu%20-%20F-1%20Grand%20Prix.bin',                      emoji: '🏎️', genre: 'Racing',     desc: '1991 · Human' },
+  { id: 'skidmarks', name: 'Super Skidmarks',           rom: './Super%20Skidmarks.bin',                                                         emoji: '🏁', genre: 'Racing',     desc: '1995 · Codemasters' },
+  // Action / Beat-em-up
+  { id: 'comix',     name: 'Comix Zone',                rom: './Comix%20Zone%20(USA).bin',                                                      emoji: '💥', genre: 'Action',     desc: '1995 · Sega' },
+  { id: 'tmnt',      name: 'TMNT: Hyperstone Heist',    rom: './Teenage%20Mutant%20Ninja%20Turtles%20-%20The%20Hyperstone%20Heist%20(USA).bin', emoji: '🐢', genre: 'Action',     desc: '1992 · Konami' },
+  { id: 'sof',       name: 'Soldiers of Fortune',       rom: './Soldiers%20of%20Fortune%20(USA).bin',                                           emoji: '🔫', genre: 'Action',     desc: '1993 · Psygnosis' },
   // Strategy
-  { id: 'syndicate', name: 'Syndicate',        rom: './syndicate.bin',        emoji: '🕶️', genre: 'Strategy',  desc: '1993 · Bullfrog' },
-  { id: 'populous',  name: 'Populous',         rom: './populous.bin',         emoji: '🌍', genre: 'Strategy',  desc: '1989 · Bullfrog' },
-  { id: 'commandos', name: 'Commandos',        rom: './commandos.bin',        emoji: '🎖️', genre: 'Strategy',  desc: '1998 · Pyro Studios' },
+  { id: 'syndicate', name: 'Syndicate',                 rom: './syndicate.bin',                                                                 emoji: '🕶️', genre: 'Strategy',   desc: '1994 · Bullfrog' },
+  { id: 'populous',  name: 'Populous II',               rom: './populous.bin',                                                                  emoji: '🌍', genre: 'Strategy',   desc: '1993 · Bullfrog' },
+  { id: 'powermonger', name: 'Power Monger',            rom: './Power%20Monger.bin',                                                            emoji: '👑', genre: 'Strategy',   desc: '1993 · Bullfrog' },
+  { id: 'commandos', name: 'Commandos',                 rom: './commandos.bin',                                                                 emoji: '🎖️', genre: 'Strategy',   desc: '2002 · Tomsoft (unofficial)' },
   // Adventure / RPG
-  { id: 'pirates',   name: 'Pirates! Gold',    rom: './pirates_gold.bin',     emoji: '⚓', genre: 'Adventure', desc: '1993 · MicroProse' },
-  { id: 'shadowrun', name: 'Shadowrun',        rom: './shadowrun.bin',        emoji: '🌆', genre: 'RPG',       desc: '1994 · Sega' },
+  { id: 'pirates',   name: 'Pirates! Gold',             rom: './pirates_gold.bin',                                                              emoji: '⚓', genre: 'Adventure',  desc: '1993 · MicroProse' },
+  { id: 'shadowrun', name: 'Shadowrun',                 rom: './shadowrun.bin',                                                                 emoji: '🌆', genre: 'RPG',        desc: '1994 · Sega' },
+  // Platformer
+  { id: 'spirou',    name: 'Spirou',                    rom: './Spirou.bin',                                                                    emoji: '🐿️', genre: 'Platformer', desc: '1995 · Infogrames' },
 ];
 
 // Determine which game to load from URL parameter ?game=<id>
@@ -1196,10 +1211,17 @@ function createRoom() {
     state.isHost = true;
     setStatus('Кімната відкрита. Чекаємо гравця 2...', 'warn');
     appendChat('SYSTEM', 'Кімната створена. Код: ' + code + '. Передай його другу.', 'sys');
-    appendChat('SYSTEM', 'Ти P1 (хост). Ти керуєш меню FIFA 97: Friendly → 2 Player. На екрані вибору команд друг (P2) обере свою на WASD+JKL.', 'sys');
+    appendChat('SYSTEM', 'Ти P1 (хост). Запусти ' + CURRENT_GAME.name + ' і увімкни режим 2 гравців у меню гри. Друг (P2) керує на WASD+JKL.', 'sys');
   });
   state.peer.on('connection', (conn) => {
     if (state.conn) { conn.close(); return; }
+    const guestGame = conn.metadata && conn.metadata.game;
+    if (guestGame && guestGame !== CURRENT_GAME.id) {
+      setStatus('Гравець відкрив іншу гру (' + guestGame + ') — обидва мають бути в одній грі', 'err');
+      appendChat('SYSTEM', 'Відмова: гість підключився з іншою грою (' + guestGame + '). Обидва мають відкрити ' + CURRENT_GAME.name + '.', 'sys');
+      conn.close();
+      return;
+    }
     state.conn = conn;
     bindConn(conn);
   });
@@ -1225,7 +1247,7 @@ function joinRoom() {
   setStatus('Підключаємось до ' + code + '...', 'warn');
   state.peer = new Peer({ debug: 1 });
   state.peer.on('open', () => {
-    const conn = state.peer.connect(ROOM_PREFIX + code, { reliable: true, metadata: { nick } });
+    const conn = state.peer.connect(ROOM_PREFIX + code, { reliable: true, metadata: { nick, game: CURRENT_GAME.id } });
     state.conn = conn;
     bindConn(conn);
     conn.on('open', () => {
@@ -1256,8 +1278,9 @@ function joinRoom() {
 function copyCode() {
   const code = document.getElementById('roomCode').textContent;
   if (code === '------') return;
-  navigator.clipboard?.writeText(code).then(() => {
-    appendChat('SYSTEM', 'Код скопійовано: ' + code, 'sys');
+  const link = location.origin + location.pathname + '?game=' + CURRENT_GAME.id + '#' + code;
+  navigator.clipboard?.writeText(link).then(() => {
+    appendChat('SYSTEM', 'Посилання скопійовано (гра + код кімнати): ' + link, 'sys');
   });
 }
 
@@ -1817,7 +1840,15 @@ window.addEventListener('DOMContentLoaded', () => {
   const def = 'Player' + Math.floor(Math.random()*90+10);
   document.getElementById('nick').value = def;
   state.nick = def;
-  setStatus('Грається соло. Створіть кімнату для онлайн-гри.', '');
+  // Автозаповнення коду кімнати з посилання виду ?game=<id>#<CODE>
+  const hm = (location.hash || '').match(/^#([A-Z0-9]{6})$/i);
+  const joinInput = document.getElementById('joinCode');
+  if (hm && joinInput) {
+    joinInput.value = hm[1].toUpperCase();
+    setStatus('Код кімнати ' + hm[1].toUpperCase() + ' вставлено з посилання — натисни «Приєднатись».', 'warn');
+  } else {
+    setStatus('Грається соло. Створіть кімнату для онлайн-гри.', '');
+  }
   // Auto-start emulator
   launchEmulator();
   // Init touch controls (mobile)

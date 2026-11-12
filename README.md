@@ -4,22 +4,33 @@
 
 **Без встановлення. Без реєстрації.** ROMs у репозиторії — ігри стартують автоматично. Працює на **десктопі та мобільному**.
 
-## Ігри (10 шт)
+## Ігри (21 шт)
 
 | Гра | Жанр | Рік | Розмір |
 |-----|------|-----|--------|
 | ⚽ FIFA 97 Gold | Sports | 1996 | 2 МБ |
 | ⚽ FIFA 98 | Sports | 1997 | 2 МБ |
-| 🏒 NHL '94 | Sports | 1993 | заглушка |
-| 🏀 NBA Jam | Sports | 1993 | 2 МБ |
-| 🏀 Bulls vs Blazers | Sports | 1992 | 1 МБ |
-| 🕶️ Syndicate | Strategy | 1993 | заглушка |
-| 🌍 Populous | Strategy | 1989 | заглушка |
-| 🎖️ Commandos | Strategy | 1998 | заглушка |
-| ⚓ Pirates! Gold | Adventure | 1993 | заглушка |
-| 🌆 Shadowrun | RPG | 1994 | заглушка |
+| ⚽ FIFA International Soccer | Sports | 1993 | 2 МБ |
+| 🏒 NHL '94 | Sports | 1993 | 1 МБ |
+| 🏀 NBA Jam | Sports | 1994 | 2 МБ |
+| 🏀 Bulls vs Blazers | Sports | 1993 | 1 МБ |
+| 🥇 Olympic Summer Games | Sports | 1996 | 2 МБ |
+| 🥋 Mortal Kombat 3 | Fighting | 1995 | 4 МБ |
+| 🏎️ Formula One | Racing | 1993 | 1 МБ |
+| 🏎️ F-1 Grand Prix (JPN) | Racing | 1991 | 1 МБ |
+| 🏁 Super Skidmarks | Racing | 1995 | 2 МБ |
+| 💥 Comix Zone | Action | 1995 | 2 МБ |
+| 🐢 TMNT: Hyperstone Heist | Action | 1992 | 1 МБ |
+| 🔫 Soldiers of Fortune | Action | 1993 | 1.5 МБ |
+| 🕶️ Syndicate | Strategy | 1994 | 2 МБ |
+| 🌍 Populous II | Strategy | 1993 | 1 МБ |
+| 👑 Power Monger | Strategy | 1993 | 1 МБ |
+| 🎖️ Commandos | Strategy | 2002 | 2 МБ |
+| ⚓ Pirates! Gold | Adventure | 1993 | 1 МБ |
+| 🌆 Shadowrun | RPG | 1994 | 2 МБ |
+| 🐿️ Spirou | Platformer | 1995 | 1 МБ |
 
-> **Заміни заглушки:** `nhl94.bin`, `syndicate.bin`, `populous.bin`, `commandos.bin`, `pirates_gold.bin`, `shadowrun.bin` — зараз це файли-заглушки без ігрових даних. Закинь свої ROM-дампи з **тим самими іменами** — і всі 10 ігор запрацюють.
+> Усі 21 ROM у репозиторії — реальні дампи (перевірено по заголовках SEGA MEGA DRIVE / GENESIS). Файл `Pirates! Gold (USA).gen` — дублікат `pirates_gold.bin`, його можна видалити.
 
 **Як додати ще гру:**
 1. Поклади ROM `.bin` файл у репозиторій
@@ -88,7 +99,7 @@
 
 - **EmulatorJS 4.2.3** (RetroArch + Genesis Plus GX WASM)
 - **PeerJS 1.5.4** для сигналінгу WebRTC
-- **10 ігор** у бібліотеці (4 реальні ROMs + 6 заглушок під заміну)
+- **21 гра** у бібліотеці (усі — реальні ROMs); кімнати нетплею ізольовані по грі: префікс `g3-<game-id>-`, а посилання-запрошення несе `?game=<id>#<КОД>`
 - **EJS_disableLocalStorage = true** — контролі не сбрасуються
 - **EJS_defaultOptions = { 'virtual-gamepad': 'disabled' }** — кастомні сенсорні кнопки
 - **CSS transform: scale(1, dynamic)** — розтягнення гри на портретному екрані
@@ -100,8 +111,8 @@
 1. Створи репозиторій
 2. Додай всі файли:
 ```bash
-git add index.html README.md fifa97.bin fifa98.bin nba_jam.bin bulls_vs_blazers.bin nhl94.bin syndicate.bin populous.bin commandos.bin pirates_gold.bin shadowrun.bin
-git commit -m "SEGA Netplay — 10 games"
+git add index.html README.md *.bin
+git commit -m "SEGA Netplay — 21 games"
 git push
 ```
 3. Settings → Pages → Source: main
@@ -111,18 +122,19 @@ git push
 
 ```
 .
-├── index.html                # ~65 КБ, єдиний файл
-├── fifa97.bin                # 2 МБ — реальний ROM
-├── fifa98.bin                # 2 МБ — реальний ROM
-├── nba_jam.bin               # 2 МБ — реальний ROM
-├── bulls_vs_blazers.bin      # 1 МБ — реальний ROM
-├── nhl94.bin                 # ⚠️ заглушка → заміни на свій дамп
-├── syndicate.bin             # ⚠️ заглушка → заміни на свій дамп
-├── pirates_gold.bin          # ⚠️ заглушка → заміни на свій дамп
-├── commandos.bin             # ⚠️ заглушка → заміни на свій дамп
-├── shadowrun.bin             # ⚠️ заглушка → заміни на свій дамп
-├── populous.bin              # ⚠️ заглушка → заміни на свій дамп
-└── README.md
+├── index.html                        # ~70 КБ, єдиний файл + каталог на 21 гру
+├── README.md
+└── 21 ROM-файл (.bin/.gen)           # усі реальні дампи
+    ├── fifa97.bin, fifa98.bin, FIFA International Soccer.bin, nhl94.bin
+    ├── nba_jam.bin, bulls_vs_blazers.bin, Olympic Summer Games.bin
+    ├── Mortal Kombat 3.bin
+    ├── Formula One (USA).bin, Nakajima Satoru Kanshuu - F-1 Grand Prix.bin, Super Skidmarks.bin
+    ├── Comix Zone (USA).bin, Teenage Mutant Ninja Turtles - The Hyperstone Heist (USA).bin
+    ├── Soldiers of Fortune (USA).bin
+    ├── syndicate.bin, populous.bin, Power Monger.bin, commandos.bin
+    ├── pirates_gold.bin              # (поруч лежить дублікат Pirates! Gold (USA).gen — можна видалити)
+    ├── shadowrun.bin
+    └── Spirou.bin
 ```
 
 ## Ліцензія
