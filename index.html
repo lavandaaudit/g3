@@ -1,0 +1,1847 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FIFA 97 GOLD — ONLINE</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0a0a0a;
+    --bg-panel: #111314;
+    --bg-deep: #050805;
+    --neon: #00ff7f;
+    --neon-dim: #007a3d;
+    --yellow: #ffd000;
+    --red: #ff3b3b;
+    --text: #d8ffe6;
+    --muted: #5a7a68;
+    --border: #1d2622;
+  }
+  html, body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Courier New', 'Consolas', monospace;
+    height: 100vh;
+    overflow: hidden;            /* NO page scroll */
+    line-height: 1.5;
+  }
+  body {
+    background-image:
+      radial-gradient(circle at 20% 0%, rgba(0,255,127,0.04), transparent 40%),
+      radial-gradient(circle at 80% 100%, rgba(255,208,0,0.03), transparent 40%);
+  }
+
+  /* === LAYOUT === */
+  #app {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    height: 100vh;              /* fixed to viewport */
+    overflow: hidden;
+  }
+  header {
+    border-bottom: 1px solid var(--border);
+    padding: 8px 16px;
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    flex-wrap: nowrap;
+    gap: 12px;
+    background: rgba(8,10,9,0.95);
+    backdrop-filter: blur(4px);
+    flex-shrink: 0;
+  }
+  header h1 {
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    color: var(--neon);
+    text-shadow: 0 0 8px rgba(0,255,127,0.4);
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  header h1 .gold { color: var(--yellow); text-shadow: 0 0 8px rgba(255,208,0,0.4); }
+  header .sub { color: var(--muted); font-size: 11px; letter-spacing: 1px; }
+
+  main {
+    display: grid;
+    grid-template-columns: 1fr 260px;
+    grid-template-rows: 1fr;
+    gap: 10px;
+    padding: 10px 14px;
+    align-items: stretch;
+    max-width: 1500px;
+    width: 100%;
+    margin: 0 auto;
+    min-height: 0;              /* allow children to shrink */
+    overflow: hidden;
+  }
+  @media (max-width: 900px) {
+    main { grid-template-columns: 1fr; grid-template-rows: 1fr; }
+  }
+
+  /* === GAME AREA === */
+  .game-stage {
+    background: #000;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+    height: 100%;               /* fill main grid cell */
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  #game {
+    width: 100%;
+    height: 100%;
+    background: #000;
+  }
+  #game canvas {
+    display: block;
+    image-rendering: pixelated;
+    max-width: 100%;
+    max-height: 100%;
+  }
+  #remoteVideo {
+    width: 100%; height: 100%;
+    background: #000;
+    display: block;
+    object-fit: contain;
+  }
+  .overlay-msg {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    gap: 14px;
+    color: var(--neon); font-size: 13px; text-align: center;
+    padding: 24px;
+    background: rgba(0,0,0,0.85);
+    z-index: 5;
+  }
+  .overlay-msg .spinner {
+    width: 32px; height: 32px;
+    border: 2px solid var(--neon-dim);
+    border-top-color: var(--neon);
+    border-radius: 50%;
+    animation: spin 0.9s linear infinite;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .overlay-msg.hide { display: none; }
+
+  /* === SIDEBAR === */
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    height: 100%;
+    min-height: 0;
+    overflow-y: auto;           /* sidebar scrolls internally if too tall */
+    overflow-x: hidden;
+    padding-right: 2px;
+  }
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+  .panel {
+    background: var(--bg-panel);
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 8px 10px;
+    flex-shrink: 0;
+  }
+  .panel h3 {
+    font-size: 10px;
+    letter-spacing: 1.2px;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .panel h3 .dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--muted);
+    display: inline-block;
+  }
+  .panel h3 .dot.on { background: var(--neon); animation: pulse 1.4s infinite; box-shadow: 0 0 6px var(--neon); }
+  .panel h3 .dot.wait { background: var(--yellow); animation: pulse 1.4s infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  label { display: block; font-size: 9px; color: var(--muted); margin-bottom: 3px; letter-spacing: 0.8px; text-transform: uppercase; }
+  input[type=text] {
+    width: 100%;
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    color: var(--neon);
+    padding: 6px 8px;
+    font-family: inherit;
+    font-size: 12px;
+    border-radius: 3px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input[type=text]:focus { border-color: var(--neon); }
+  .input-code { text-align: center; letter-spacing: 3px; text-transform: uppercase; font-size: 16px; }
+
+  .btn {
+    background: transparent;
+    color: var(--neon);
+    border: 1px solid var(--neon);
+    padding: 6px 10px;
+    font-family: inherit;
+    font-size: 10px;
+    letter-spacing: 0.8px;
+    text-transform: uppercase;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: all 0.15s;
+    font-weight: 700;
+  }
+  .btn:hover:not(:disabled) { background: var(--neon); color: #000; box-shadow: 0 0 10px rgba(0,255,127,0.4); }
+  .btn:disabled { opacity: 0.35; cursor: not-allowed; }
+  .btn.yellow { color: var(--yellow); border-color: var(--yellow); }
+  .btn.yellow:hover:not(:disabled) { background: var(--yellow); color: #000; }
+  .btn.red { color: var(--red); border-color: var(--red); }
+  .btn.red:hover:not(:disabled) { background: var(--red); color: #000; }
+  .btn.full { width: 100%; }
+  .btn.sm { padding: 6px 10px; font-size: 10px; }
+
+  .btn-row { display: flex; gap: 6px; flex-wrap: wrap; }
+  .field { margin-bottom: 5px; }
+
+  .room-code-box {
+    text-align: center;
+    padding: 10px 6px;
+    background: var(--bg-deep);
+    border: 1px dashed var(--yellow);
+    border-radius: 3px;
+    margin: 6px 0;
+  }
+  .room-code-box .lbl { color: var(--muted); font-size: 9px; letter-spacing: 1.5px; text-transform: uppercase; }
+  .room-code-box .code {
+    color: var(--yellow);
+    font-size: 22px;
+    letter-spacing: 5px;
+    font-weight: 700;
+    margin-top: 2px;
+    text-shadow: 0 0 8px rgba(255,208,0,0.4);
+    user-select: all;
+    cursor: pointer;
+  }
+
+  .status-line {
+    display: flex; align-items: center; gap: 8px;
+    color: var(--muted); font-size: 10px;
+    padding: 6px 8px;
+    background: var(--bg-deep);
+    border-left: 2px solid var(--neon-dim);
+    border-radius: 2px;
+    margin-top: 6px;
+    letter-spacing: 0.5px;
+  }
+  .status-line.warn { border-color: var(--yellow); color: var(--yellow); }
+  .status-line.err  { border-color: var(--red); color: var(--red); }
+  .status-line.ok   { border-color: var(--neon); color: var(--neon); }
+
+  /* chat */
+  .chat-box { display: flex; flex-direction: column; gap: 4px; }
+  .chat-log {
+    height: 110px;
+    overflow-y: auto;
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 4px 6px;
+    font-size: 10px;
+    line-height: 1.35;
+    flex-shrink: 0;
+  }
+  .chat-log .msg { margin-bottom: 3px; word-wrap: break-word; }
+  .chat-log .msg .who { color: var(--neon); font-weight: 700; }
+  .chat-log .msg .who.p2 { color: var(--yellow); }
+  .chat-log .msg .who.sys { color: var(--muted); font-style: italic; font-weight: normal; }
+  .chat-log .msg .txt { color: var(--text); }
+  .chat-input-row { display: flex; gap: 4px; }
+  .chat-input-row input { flex: 1; }
+
+  .controls-help { font-size: 10px; color: var(--muted); line-height: 1.55; }
+  .controls-help .k {
+    display: inline-block; padding: 1px 4px; background: var(--bg-deep);
+    border: 1px solid var(--border); border-radius: 2px; color: var(--neon);
+    margin-right: 2px; min-width: 11px; text-align: center; font-size: 9px;
+  }
+  .controls-help .k.y { color: var(--yellow); }
+
+  /* MODE TABS */
+  .mode-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px;
+    margin-bottom: 6px;
+  }
+  .mode-tab {
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    padding: 7px 4px;
+    text-align: center;
+    cursor: pointer;
+    border-radius: 3px;
+    transition: all 0.15s;
+    font-family: inherit;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+  .mode-tab.active {
+    border-color: var(--neon);
+    color: var(--neon);
+    background: rgba(0,255,127,0.08);
+    box-shadow: 0 0 8px rgba(0,255,127,0.15);
+  }
+  .mode-tab.active.y {
+    border-color: var(--yellow);
+    color: var(--yellow);
+    background: rgba(255,208,0,0.08);
+    box-shadow: 0 0 8px rgba(255,208,0,0.15);
+  }
+  .mode-tab small { display:block; font-size:8px; color:inherit; opacity:0.7; margin-top:2px; letter-spacing:0.5px; text-transform:none; font-weight:normal }
+
+  /* FOCUS HINT */
+  .focus-hint {
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(0,0,0,0.85);
+    border: 2px solid var(--neon);
+    color: var(--neon);
+    padding: 16px 28px;
+    border-radius: 6px;
+    font-size: 14px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-weight: 700;
+    z-index: 6;
+    cursor: pointer;
+    text-align: center;
+    box-shadow: 0 0 24px rgba(0,255,127,0.4);
+    animation: pulse 1.6s infinite;
+    text-shadow: 0 0 6px rgba(0,255,127,0.5);
+  }
+  .focus-hint small {
+    display: block;
+    margin-top: 6px;
+    font-size: 10px;
+    color: var(--muted);
+    text-transform: none;
+    letter-spacing: 0.3px;
+    font-weight: normal;
+  }
+  .focus-hint.hide { display: none; }
+
+  footer {
+    text-align: center;
+    color: var(--muted);
+    font-size: 9px;
+    padding: 6px 20px;
+    border-top: 1px solid var(--border);
+    letter-spacing: 0.5px;
+    flex-shrink: 0;
+  }
+  footer a { color: var(--neon-dim); text-decoration: none; }
+
+  .hidden { display: none !important; }
+
+  /* === GAME SELECTOR MODAL === */
+  .game-selector-overlay {
+    display: none;
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.92);
+    z-index: 100;
+    align-items: center; justify-content: center;
+    padding: 20px;
+    backdrop-filter: blur(6px);
+  }
+  .game-selector-overlay.show { display: flex; }
+  .game-selector-modal {
+    background: var(--bg-panel);
+    border: 1px solid var(--neon-dim);
+    border-radius: 8px;
+    padding: 20px;
+    max-width: 600px;
+    width: 100%;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 0 30px rgba(0,255,127,0.2);
+  }
+  .game-selector-modal h2 {
+    color: var(--neon);
+    font-size: 18px;
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+  }
+  .game-selector-modal p {
+    color: var(--muted);
+    font-size: 11px;
+    margin-bottom: 14px;
+  }
+  .games-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .game-card {
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 12px 8px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    position: relative;
+  }
+  .game-card:hover {
+    border-color: var(--neon);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,255,127,0.15);
+  }
+  .game-card.current {
+    border-color: var(--neon);
+    background: rgba(0,255,127,0.08);
+  }
+  .game-card.current::after {
+    content: '▶';
+    position: absolute; top: 4px; right: 6px;
+    color: var(--neon); font-size: 8px;
+  }
+  .game-card .emoji { font-size: 28px; line-height: 1; margin-bottom: 6px; }
+  .game-card .name { font-size: 11px; color: var(--text); font-weight: 700; margin-bottom: 2px; }
+  .game-card .genre { font-size: 9px; color: var(--muted); }
+  .game-card .desc { font-size: 8px; color: var(--muted); margin-top: 2px; opacity: 0.7; }
+  .game-upload-area { margin-top: 10px; }
+  .rom-upload-btn {
+    display: block;
+    text-align: center;
+    padding: 10px;
+    background: var(--bg-deep);
+    border: 1px dashed var(--yellow);
+    border-radius: 4px;
+    color: var(--yellow);
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .rom-upload-btn:hover {
+    background: rgba(255,208,0,0.08);
+    border-style: solid;
+  }
+
+  /* Elements that only exist for mobile — hidden on desktop */
+  .sidebar-backdrop { display: none; }
+
+  /* === HAMBURGER MENU (mobile) === */
+  .menu-toggle {
+    display: none;
+    background: transparent;
+    border: 1px solid var(--neon);
+    color: var(--neon);
+    width: 34px; height: 34px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    padding: 0;
+  }
+
+  /* === TOUCH CONTROLS (mobile only) === */
+  .touch-controls {
+    display: none;
+    justify-content: space-between;
+    align-items: flex-end;
+    padding: 8px 10px;
+    gap: 10px;
+    user-select: none;
+    -webkit-user-select: none;
+    -webkit-touch-callout: none;
+    touch-action: none;
+  }
+  /* Circular D-pad — 8 directions (4 cardinal + 4 diagonal) */
+  .dpad-circle {
+    position: relative;
+    width: 120px; height: 120px;
+    border-radius: 50%;
+    background: rgba(17, 19, 20, 0.55);
+    border: 1px solid var(--border);
+    backdrop-filter: blur(3px);
+    -webkit-backdrop-filter: blur(3px);
+    flex-shrink: 0;
+    touch-action: none;
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .dpad-stick {
+    position: absolute;
+    top: 50%; left: 50%;
+    width: 36px; height: 36px;
+    margin: -18px 0 0 -18px;
+    border-radius: 50%;
+    background: rgba(0, 255, 127, 0.15);
+    border: 1px solid var(--neon-dim);
+    pointer-events: none;
+    transition: transform 0.08s ease-out, background 0.08s;
+    box-shadow: 0 0 8px rgba(0,255,127,0.2);
+  }
+  .dpad-circle.active .dpad-stick {
+    background: rgba(0, 255, 127, 0.3);
+    border-color: var(--neon);
+    box-shadow: 0 0 14px rgba(0,255,127,0.5);
+  }
+  /* Cardinal direction arrows (visual only) */
+  .dpad-arrow {
+    position: absolute;
+    color: var(--muted);
+    font-size: 10px;
+    pointer-events: none;
+    line-height: 1;
+  }
+  .dpad-arrow-up    { top: 4px;    left: 50%; transform: translateX(-50%); }
+  .dpad-arrow-down  { bottom: 4px; left: 50%; transform: translateX(-50%); }
+  .dpad-arrow-left  { left: 4px;   top: 50%;  transform: translateY(-50%); }
+  .dpad-arrow-right { right: 4px;  top: 50%;  transform: translateY(-50%); }
+  /* Diagonal indicators (dots at 1:30, 4:30, 7:30, 10:30 positions) */
+  .dpad-diag {
+    position: absolute;
+    width: 5px; height: 5px;
+    border-radius: 50%;
+    background: var(--muted);
+    opacity: 0.4;
+    pointer-events: none;
+  }
+  .dpad-diag-ur { top: 18%;  right: 18%; }
+  .dpad-diag-dr { bottom: 18%; right: 18%; }
+  .dpad-diag-dl { bottom: 18%; left: 18%; }
+  .dpad-diag-ul { top: 18%;  left: 18%; }
+  .dpad-circle.active .dpad-diag.lit { background: var(--neon); opacity: 1; box-shadow: 0 0 6px var(--neon); }
+  .dpad-circle.active .dpad-arrow.lit { color: var(--neon); }
+
+  /* Action buttons */
+  .t-btn {
+    position: absolute;
+    width: 34px; height: 34px;
+    background: rgba(17, 19, 20, 0.65);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 50%;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    touch-action: manipulation;
+    transition: transform 0.05s, background 0.05s, box-shadow 0.05s;
+    -webkit-tap-highlight-color: transparent;
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+  }
+  .t-btn.pressed {
+    background: var(--neon);
+    color: #000;
+    transform: scale(0.85);
+    box-shadow: 0 0 14px rgba(0,255,127,0.7);
+    border-color: var(--neon);
+  }
+  .t-btn.pressed.yellow {
+    background: var(--yellow);
+    box-shadow: 0 0 14px rgba(255,208,0,0.7);
+    border-color: var(--yellow);
+  }
+
+  .action-cluster {
+    position: relative;
+    width: 110px; height: 120px;
+    flex-shrink: 0;
+  }
+  .act-c   { top: 0; left: 38px; }
+  .act-a   { top: 38px; left: 0; }
+  .act-b   { top: 38px; right: 0; }
+  .act-start {
+    bottom: 0; left: 38px;
+    width: 34px;
+    background: rgba(17, 19, 20, 0.65);
+    color: var(--neon);
+    border-color: var(--neon-dim);
+    font-size: 7px;
+    letter-spacing: 0.3px;
+  }
+  .act-a { color: var(--neon); border-color: var(--neon-dim); }
+  .act-b { color: var(--yellow); border-color: #6b5a00; }
+  .act-c { color: var(--text); }
+  .act-label {
+    position: absolute;
+    font-size: 7px;
+    color: var(--muted);
+    letter-spacing: 0.3px;
+    text-transform: uppercase;
+    pointer-events: none;
+  }
+
+  /* === MOBILE LAYOUT === */
+  @media (max-width: 900px), (hover: none) and (pointer: coarse) {
+    html, body { height: 100vh; height: 100dvh; overflow: hidden; }
+    header { padding: 5px 10px; flex-shrink: 0; background: rgba(8,10,9,0.95); }
+    header h1 { font-size: 13px; letter-spacing: 1px; }
+    header .sub { display: none; }
+    .menu-toggle { display: flex; align-items: center; justify-content: center; }
+
+    main {
+      grid-template-columns: 1fr;
+      grid-template-rows: 1fr;  /* ONLY game — controls overlay on top */
+      padding: 0;
+      gap: 0;
+      min-height: 0;
+      overflow: hidden;
+    }
+    .game-stage {
+      width: 100%;
+      height: 100%;
+      max-height: none;
+      margin: 0;
+      min-height: 0;
+      border: none;
+      border-radius: 0;
+    }
+    #game {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+    }
+    /* Canvas + remote video are stretched via JS (adjustGameStretch) to fill screen.
+       EmulatorJS renders 4:3 game at top, leaving black below.
+       We scale Y so the game portion fills the entire screen height.
+       Applies to BOTH canvas (host) and remote video (online client). */
+    #game canvas,
+    #remoteVideo {
+      width: 100%;
+      height: 100%;
+      transform-origin: top left;
+    }
+    .focus-hint { font-size: 11px; padding: 10px 14px; }
+    .focus-hint small { font-size: 8px; }
+
+    /* sidebar = slide-out */
+    .sidebar {
+      position: fixed;
+      top: 0; right: -100%;
+      width: 280px;
+      height: 100vh; height: 100dvh;
+      background: var(--bg);
+      border-left: 1px solid var(--border);
+      padding: 10px;
+      overflow-y: auto;
+      transition: right 0.25s ease;
+      z-index: 50;
+      box-shadow: -4px 0 20px rgba(0,0,0,0.5);
+    }
+    .sidebar.open { right: 0; }
+    .sidebar-backdrop {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.6);
+      z-index: 40;
+    }
+    .sidebar-backdrop.show { display: block; }
+
+    /* Touch controls = overlay on top of game */
+    .touch-controls {
+      display: flex;
+      position: fixed;
+      bottom: 0; left: 0; right: 0;
+      background: transparent;
+      pointer-events: none;  /* let touches pass through to game except on buttons */
+      z-index: 20;
+      padding: 6px 8px calc(6px + env(safe-area-inset-bottom));
+    }
+    .dpad, .dpad-circle, .action-cluster {
+      pointer-events: auto;  /* only the button clusters capture touches */
+    }
+
+    /* hide EmulatorJS's own virtual gamepad — wrong button IDs */
+    .ejs_virtual_gamepad_parent,
+    .ejs_virtual_gamepad {
+      display: none !important;
+    }
+  }
+
+  /* === LANDSCAPE MOBILE === */
+  /* In landscape: game fills screen (4:3 fits naturally), controls on sides */
+  @media (max-width: 1100px) and (orientation: landscape) and (max-height: 500px) {
+    header { padding: 2px 8px; }
+    header h1 { font-size: 11px; letter-spacing: 0.5px; }
+    .menu-toggle { width: 28px; height: 28px; font-size: 14px; }
+
+    /* Game fills entire screen */
+    main { padding: 0; }
+    .game-stage { border: none; border-radius: 0; }
+
+    /* Touch controls: overlay on left and right sides (full height) */
+    .touch-controls {
+      top: 0; bottom: 0;
+      height: 100%;
+      align-items: center;
+      padding: 0 8px;
+      flex-direction: row;
+    }
+    /* Smaller circular D-pad in landscape */
+    .dpad-circle { width: 100px; height: 100px; }
+    .dpad-stick { width: 30px; height: 30px; margin: -15px 0 0 -15px; }
+    .dpad-arrow { font-size: 9px; }
+    /* Smaller action buttons */
+    .action-cluster { width: 100px; height: 100px; }
+    .t-btn { width: 30px; height: 30px; font-size: 10px; }
+    .act-c { top: 0; left: 35px; }
+    .act-a { top: 35px; left: 0; }
+    .act-b { top: 35px; right: 0; }
+    .act-start { bottom: 0; left: 35px; width: 30px; font-size: 6px; }
+  }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <header>
+    <h1 id="pageTitle">🎮 SEGA NETPLAY</h1>
+    <button class="btn sm" id="changeGameBtn" onclick="showGameSelector()">📁 Ігри</button>
+    <span class="sub">SEGA MEGA DRIVE · NETPLAY · v3.0</span>
+    <button class="menu-toggle" id="menuToggle" aria-label="Меню">☰</button>
+  </header>
+
+  <main>
+    <!-- GAME -->
+    <div class="game-stage" id="gameStage">
+      <div id="game"></div>
+      <video id="remoteVideo" autoplay muted playsinline class="hidden"></video>
+      <div class="focus-hint" id="focusHint" onclick="focusGame()">▶ ТИСНИ ЩОБ ГРАТИ<small>WASD = рух · J=Пас · K=Удар · L=Пас · Space=Start</small></div>
+      <div class="overlay-msg" id="gameOverlay">
+        <div class="spinner"></div>
+        <div id="overlayText">Завантаження гри...</div>
+      </div>
+    </div>
+
+    <!-- TOUCH CONTROLS (mobile only, shown via CSS) -->
+    <div class="touch-controls" id="touchControls">
+      <!-- CIRCULAR D-PAD (8 directions: 4 cardinal + 4 diagonal) -->
+      <div class="dpad-circle" id="dpadCircle">
+        <div class="dpad-stick" id="dpadStick"></div>
+        <span class="dpad-arrow dpad-arrow-up">▲</span>
+        <span class="dpad-arrow dpad-arrow-right">▶</span>
+        <span class="dpad-arrow dpad-arrow-down">▼</span>
+        <span class="dpad-arrow dpad-arrow-left">◀</span>
+        <span class="dpad-diag dpad-diag-ur"></span>
+        <span class="dpad-diag dpad-diag-dr"></span>
+        <span class="dpad-diag dpad-diag-dl"></span>
+        <span class="dpad-diag dpad-diag-ul"></span>
+      </div>
+      <!-- ACTION BUTTONS -->
+      <div class="action-cluster">
+        <button class="t-btn act-c"   data-sym="c">C</button>
+        <button class="t-btn act-a"   data-sym="a">A</button>
+        <button class="t-btn act-b yellow" data-sym="b">B</button>
+        <button class="t-btn act-start" data-sym="start">START</button>
+      </div>
+    </div>
+
+    <!-- Sidebar backdrop (mobile) -->
+    <div class="sidebar-backdrop" id="sidebarBackdrop"></div>
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar">
+
+      <!-- MODE SELECT -->
+      <div class="panel">
+        <h3>Режим гри</h3>
+        <div class="mode-tabs">
+          <button class="mode-tab active" id="modeTabSolo" onclick="setMode('solo')">Соло<small>vs CPU / 2P локально</small></button>
+          <button class="mode-tab y" id="modeTabOnline" onclick="setMode('online')">Онлайн<small>з другом за кодом</small></button>
+        </div>
+        <div id="modeSoloHelp" class="status-line" style="border-color:var(--neon);color:var(--neon)">
+          <span>·</span><span>Граєш сам. В меню FIFA 97: Exhibition → обери vs CPU або 2 Player.</span>
+        </div>
+        <div id="modeOnlineHelp" class="status-line hidden" style="border-color:var(--yellow);color:var(--yellow)">
+          <span>·</span><span>Створи кімнату або приєднайся за кодом друга нижче.</span>
+        </div>
+      </div>
+
+      <!-- ONLINE CABINET -->
+      <div class="panel" id="cabinetPanel">
+        <h3>Онлайн кабінет <span class="dot" id="netDot"></span></h3>
+
+        <div class="field">
+          <label>Ваш нік</label>
+          <input type="text" id="nick" maxlength="14" value="" placeholder="Ronaldo9">
+        </div>
+
+        <div class="btn-row" style="margin-bottom:8px">
+          <button class="btn full" onclick="createRoom()">Створити кімнату</button>
+        </div>
+
+        <div class="field">
+          <label>Код кімнати</label>
+          <input type="text" id="joinCode" class="input-code" maxlength="6" placeholder="______">
+        </div>
+
+        <div class="btn-row">
+          <button class="btn yellow full" onclick="joinRoom()">Приєднатись</button>
+        </div>
+
+        <div id="roomBox" class="room-code-box hidden">
+          <div class="lbl">КОД КІМНАТИ</div>
+          <div class="code" id="roomCode" onclick="copyCode()">------</div>
+        </div>
+
+        <div class="btn-row" id="roomActions" style="margin-top:6px">
+          <button class="btn sm" onclick="copyCode()">Скопіювати</button>
+          <button class="btn sm red" onclick="leaveSession()">Покинути</button>
+        </div>
+
+        <div id="statusLine" class="status-line">
+          <span>·</span><span id="statusText">Поза кімнатою</span>
+        </div>
+      </div>
+
+      <!-- CHAT -->
+      <div class="panel">
+        <h3>Чат <span class="dot" id="chatDot"></span></h3>
+        <div class="chat-box">
+          <div class="chat-log" id="chatLog"></div>
+          <div class="chat-input-row">
+            <input type="text" id="chatInput" maxlength="200" placeholder="Повідомлення..." onkeydown="if(event.key==='Enter')sendChat()">
+            <button class="btn sm" onclick="sendChat()">></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- CONTROLS -->
+      <div class="panel">
+        <h3>Керування <button class="btn sm" onclick="focusGame()" style="float:right;margin-top:-4px">↺ Фокус</button></h3>
+        <div class="controls-help">
+          <div style="margin-bottom:4px;color:var(--neon)">P1 (ти / хост):</div>
+          <div><span class="k">W</span><span class="k">A</span><span class="k">S</span><span class="k">D</span> рух</div>
+          <div><span class="k">J</span>Пас / Перемкн.<br><span class="k">K</span>Удар / Підкат<br><span class="k">L</span>Пас на ході / Голкіпер<br><span class="k">␣</span>Start</div>
+          <div id="p2ctrl" class="hidden">
+            <div style="margin:6px 0 4px;color:var(--yellow)">P2 (клієнт, теж WASD):</div>
+            <div><span class="k y">W</span><span class="k y">A</span><span class="k y">S</span><span class="k y">D</span> рух</div>
+            <div><span class="k y">J</span>Пас · <span class="k y">K</span>Удар · <span class="k y">L</span>Пас на ході · <span class="k y">␣</span>Start</div>
+          </div>
+          <div style="margin-top:6px;padding-top:5px;border-top:1px dashed var(--border);color:var(--muted);font-size:9px;line-height:1.45">
+            ⚠ Не реагує? Клікни на гру або «↺ Фокус».<br>
+            ⏳ Перший запуск ~15 сек.<br>
+            ▶ Тисни <span class="k">␣</span> (Space) на титульному екрані FIFA 97.
+          </div>
+        </div>
+      </div>
+
+    </aside>
+  </main>
+
+  <footer>
+    Сторінка для GitHub Pages · EmulatorJS 4.2.3 + PeerJS WebRTC · ROM у репозиторії
+  </footer>
+</div>
+
+<!-- GAME SELECTOR MODAL -->
+<div class="game-selector-overlay" id="gameSelectorOverlay">
+  <div class="game-selector-modal">
+    <h2>🎮 Обери гру</h2>
+    <p>Усі ігра підтримують онлайн-нетплей. Керування універсальне.</p>
+    <div class="games-grid" id="gamesGrid"></div>
+    <div class="game-upload-area">
+      <label class="rom-upload-btn">
+        📁 Завантажити свій ROM (.bin/.smd/.gen/.md)
+        <input type="file" id="romUpload" accept=".bin,.smd,.gen,.md,.zip" style="display:none">
+      </label>
+    </div>
+    <button class="btn" onclick="hideGameSelector()" style="margin-top:10px">Скасувати</button>
+  </div>
+</div>
+
+<!-- PeerJS for WebRTC signaling -->
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+
+<script>
+/* ========================================================================
+   FIFA 97 GOLD ONLINE — single-file, game starts immediately
+   ======================================================================== */
+
+const EJS_VERSION = '4.2.3';
+const EJS_BASE = `https://cdn.jsdelivr.net/gh/EmulatorJS/EmulatorJS@${EJS_VERSION}/data/`;
+const ROOM_PREFIX = 'fifa97gold-';
+
+/* ---------- GAME LIBRARY ---------- */
+const GAMES = [
+  // Sports
+  { id: 'fifa97',    name: 'FIFA 97 Gold',     rom: './fifa97.bin',           emoji: '⚽', genre: 'Sports',    desc: '1996 · EA Sports' },
+  { id: 'fifa98',    name: 'FIFA 98',          rom: './fifa98.bin',           emoji: '⚽', genre: 'Sports',    desc: '1997 · EA Sports' },
+  { id: 'nhl94',     name: "NHL '94",          rom: './nhl94.bin',            emoji: '🏒', genre: 'Sports',    desc: '1993 · EA Sports' },
+  { id: 'nbajam',    name: 'NBA Jam',          rom: './nba_jam.bin',          emoji: '🏀', genre: 'Sports',    desc: '1993 · Acclaim' },
+  { id: 'bullsblz',  name: 'Bulls vs Blazers', rom: './bulls_vs_blazers.bin', emoji: '🏀', genre: 'Sports',    desc: '1992 · EA Sports' },
+  // Strategy
+  { id: 'syndicate', name: 'Syndicate',        rom: './syndicate.bin',        emoji: '🕶️', genre: 'Strategy',  desc: '1993 · Bullfrog' },
+  { id: 'populous',  name: 'Populous',         rom: './populous.bin',         emoji: '🌍', genre: 'Strategy',  desc: '1989 · Bullfrog' },
+  { id: 'commandos', name: 'Commandos',        rom: './commandos.bin',        emoji: '🎖️', genre: 'Strategy',  desc: '1998 · Pyro Studios' },
+  // Adventure / RPG
+  { id: 'pirates',   name: 'Pirates! Gold',    rom: './pirates_gold.bin',     emoji: '⚓', genre: 'Adventure', desc: '1993 · MicroProse' },
+  { id: 'shadowrun', name: 'Shadowrun',        rom: './shadowrun.bin',        emoji: '🌆', genre: 'RPG',       desc: '1994 · Sega' },
+];
+
+// Determine which game to load from URL parameter ?game=<id>
+function getCurrentGame() {
+  const params = new URLSearchParams(window.location.search);
+  const gid = params.get('game') || 'fifa97';
+  return GAMES.find(g => g.id === gid) || GAMES[0];
+}
+const CURRENT_GAME = getCurrentGame();
+const DEFAULT_ROM_URL = CURRENT_GAME.rom;
+
+/* ---------- STATE ---------- */
+const state = {
+  isHost: null,             // null = not in room, true/false once connected
+  nick: '',
+  oppNick: '',
+  peer: null,
+  conn: null,
+  pc: null,
+  mediaStream: null,
+  emulatorStarted: false,
+};
+
+/* ---------- STATUS / CHAT ---------- */
+function setStatus(text, kind) {
+  const el = document.getElementById('statusLine');
+  el.className = 'status-line' + (kind ? ' ' + kind : '');
+  document.getElementById('statusText').textContent = text;
+  const dot = document.getElementById('netDot');
+  dot.className = 'dot' + (kind === 'ok' ? ' on' : kind === 'warn' ? ' wait' : '');
+}
+
+/* ---------- MODE SELECT ---------- */
+function setMode(mode) {
+  const solo = document.getElementById('modeTabSolo');
+  const onln = document.getElementById('modeTabOnline');
+  const cab  = document.getElementById('cabinetPanel');
+  const hS = document.getElementById('modeSoloHelp');
+  const hO = document.getElementById('modeOnlineHelp');
+  if (mode === 'online') {
+    solo.classList.remove('active');
+    onln.classList.add('active');
+    hS.classList.add('hidden');
+    hO.classList.remove('hidden');
+    // scroll cabinet into view (on mobile mainly)
+    cab.style.borderColor = 'var(--yellow)';
+    appendChat('SYSTEM', 'Режим: Онлайн. Створи кімнату або введи код друга.', 'sys');
+  } else {
+    solo.classList.add('active');
+    onln.classList.remove('active');
+    hS.classList.remove('hidden');
+    hO.classList.add('hidden');
+    cab.style.borderColor = '';
+    appendChat('SYSTEM', 'Режим: Соло. В меню FIFA 97 оберіть Exhibition → vs CPU або 2 Player.', 'sys');
+  }
+}
+function showOverlay(text) {
+  const o = document.getElementById('gameOverlay');
+  document.getElementById('overlayText').textContent = text;
+  o.classList.remove('hide');
+}
+function hideOverlay() {
+  document.getElementById('gameOverlay').classList.add('hide');
+}
+function appendChat(who, text, cls) {
+  const log = document.getElementById('chatLog');
+  const div = document.createElement('div');
+  div.className = 'msg';
+  div.innerHTML = `<span class="who ${cls||''}">${escapeHtml(who)}:</span> <span class="txt">${escapeHtml(text)}</span>`;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+}
+function escapeHtml(s){ return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+/* ---------- EMULATOR (auto-start on page load) ---------- */
+function launchEmulator() {
+  if (state.emulatorStarted) return;
+  state.emulatorStarted = true;
+
+  // Check for uploaded ROM in sessionStorage
+  let romUrl = DEFAULT_ROM_URL;
+  let gameName = CURRENT_GAME.name;
+  let gameId = CURRENT_GAME.id;
+  try {
+    const uploaded = sessionStorage.getItem('uploadedRom');
+    if (uploaded) {
+      const parsed = JSON.parse(uploaded);
+      const bytes = new Uint8Array(parsed.data);
+      const blob = new Blob([bytes], { type: 'application/octet-stream' });
+      romUrl = URL.createObjectURL(blob);
+      gameName = parsed.name.replace(/\.[^.]+$/, '');
+      gameId = 'uploaded-' + parsed.name;
+      showOverlay('Завантаження: ' + gameName + '...');
+    } else {
+      showOverlay('Завантаження ' + gameName + '...');
+    }
+  } catch(e) {
+    showOverlay('Завантаження ' + gameName + '...');
+  }
+
+  window.EJS_player        = '#game';
+  window.EJS_core          = 'segaMD';
+  window.EJS_gameUrl       = romUrl;
+  window.EJS_gameName      = gameName;
+  window.EJS_gameID        = gameId;
+  window.EJS_pathtodata    = EJS_BASE;
+  window.EJS_startOnLoaded = true;
+  window.EJS_color         = '#00ff7f';
+  window.EJS_backgroundColor = '#000';
+  window.EJS_alignStartButton = 'center';
+  window.EJS_DEBUG_XX      = false;
+  window.EJS_adUrl         = '';
+  // CRITICAL: disable localStorage so saved control settings from previous visits
+  // don't override our EJS_defaultControls. Without this, keys may silently stop working.
+  window.EJS_disableLocalStorage = true;
+
+  // Disable EmulatorJS's built-in virtual gamepad — it uses WRONG button IDs
+  // (A=1, B=0, C=8 per its config, but actual core uses A=9, B=0, C=8).
+  // We provide our own custom touch controls with correct IDs.
+  window.EJS_defaultOptions = {
+    'virtual-gamepad': 'disabled'
+  };
+
+  // Classic WASD layout for P1 (host/solo).
+  // EMPIRICALLY VERIFIED button IDs for Genesis Plus GX core (segaMD) in EmulatorJS 4.2.3:
+  //   A button = ID 9 (advances menu = confirm = Pass / Switch player in gameplay)
+  //   B button = ID 0 (Shoot / Slide tackle)
+  //   C button = ID 8 (Through ball / Goalkeeper charge)
+  //   D-pad: Up=4, Down=5, Left=6, Right=7
+  //   Mode=2, Start=3, X=10, Y=1, Z=11 (6-button extras, rarely used in FIFA 97)
+  // NOTE: All 4 player slots (0-3) must exist (even if empty) or setupKeys() crashes.
+  window.EJS_defaultControls = {
+    0: {
+      // P1 = WASD + JKL (classic PC FIFA feel)
+      0: {value: 'k',     value2: 'B'},                 // B button = K  (Удар / Підкат)
+      1: {value: 'i',     value2: 'Y'},                 // Y (6-button, unused in FIFA 97)
+      2: {value: 'v',     value2: 'MODE'},              // Mode = V
+      3: {value: 'space', value2: 'START'},             // Start = Space
+      4: {value: 'w',     value2: 'UP'},                // D-pad Up = W
+      5: {value: 's',     value2: 'DOWN'},              // D-pad Down = S
+      6: {value: 'a',     value2: 'LEFT'},              // D-pad Left = A
+      7: {value: 'd',     value2: 'RIGHT'},             // D-pad Right = D
+      8: {value: 'l',     value2: 'C'},                 // C button = L  (Пас на ході / Голкіпер)
+      9: {value: 'j',     value2: 'A'},                 // A button = J  (Пас / Перемикання) ← KEY FIX
+      10:{value: 'q',     value2: 'X'},                 // X (6-button)
+      11:{value: 'e',     value2: 'Z'},                 // Z (6-button)
+    },
+    1: {
+      // P2 (local 2P / fallback) = Arrows + Z/X/C
+      0: {value: 'x',     value2: 'B'},                 // B button = X
+      1: {value: 'i',     value2: 'Y'},
+      2: {value: 'period',value2: 'MODE'},              // Mode = .
+      3: {value: 'enter', value2: 'START'},             // Start = Enter
+      4: {value: 'up arrow',    value2: 'UP'},
+      5: {value: 'down arrow',  value2: 'DOWN'},
+      6: {value: 'left arrow',  value2: 'LEFT'},
+      7: {value: 'right arrow', value2: 'RIGHT'},
+      8: {value: 'c',     value2: 'C'},                 // C button = C
+      9: {value: 'z',     value2: 'A'},                 // A button = Z  ← KEY FIX
+      10:{value: 'q',     value2: 'X'},
+      11:{value: 'r',     value2: 'Z'},
+    },
+    2: {},
+    3: {}
+  };
+
+  // When emulator is ready, hide overlay + auto-focus the game so keyboard works
+  window.EJS_ready = function() {
+    hideOverlay();
+    focusGame();
+    appendChat('SYSTEM', 'Гра готова. START для початку. В меню FIFA 97: Friendly → 2 Player.', 'sys');
+    if (state.isHost === true) {
+      const canvas = document.querySelector('#game canvas');
+      if (canvas) startMediaNegotiation();
+    }
+    adjustGameStretch();
+  };
+
+  // On mobile: stretch the game (or remote video for online client) to fill the screen.
+  // - PORTRAIT: 4:3 content renders at top, we scale Y to fill the full height.
+  // - LANDSCAPE: 4:3 fits naturally, no stretch needed.
+  // Applies to BOTH the local canvas (host/solo) AND the remote video (online client).
+  function adjustGameStretch() {
+    const isDesktop = window.innerWidth > 900;
+    const canvas = document.querySelector('#game canvas');
+    const video = document.getElementById('remoteVideo');
+    if (isDesktop) {
+      if (canvas) canvas.style.transform = 'none';
+      if (video) video.style.transform = 'none';
+      return;
+    }
+    // Get parent dimensions (game-stage)
+    const parent = canvas ? canvas.parentElement : (video ? video.parentElement : null);
+    if (!parent) return;
+    const pw = parent.clientWidth;
+    const ph = parent.clientHeight;
+    if (!pw || !ph) return;
+    // Landscape: no stretch
+    if (pw > ph) {
+      if (canvas) canvas.style.transform = 'none';
+      if (video) video.style.transform = 'none';
+      return;
+    }
+    // Portrait: stretch Y
+    const scaleY = (ph * 4) / (pw * 3);
+    const tf = 'scale(1, ' + scaleY + ')';
+    if (canvas) canvas.style.transform = tf;
+    if (video) video.style.transform = tf;
+  }
+  // Re-run on resize/orientation change and periodically (EmulatorJS may reset)
+  setInterval(adjustGameStretch, 1000);
+  window.addEventListener('resize', adjustGameStretch);
+  window.addEventListener('orientationchange', () => setTimeout(adjustGameStretch, 300));
+
+  const s = document.createElement('script');
+  s.src = EJS_BASE + 'loader.js';
+  s.onerror = () => showOverlay('Не вдалося завантажити емулятор. Перевірте інтернет.');
+  document.body.appendChild(s);
+}
+
+/* Prevent arrow keys / space / page-up/down from scrolling the page
+   (page is static at 100vh, but some browsers still try to scroll).
+   Skip when focus is in input/textarea so user can type. */
+(function preventPageScroll() {
+  const blocked = ['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' ','PageUp','PageDown','Home','End'];
+  document.addEventListener('keydown', (e) => {
+    const t = e.target;
+    const tag = t && t.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || t && t.isContentEditable) return;
+    if (blocked.includes(e.key)) e.preventDefault();
+  }, { passive: false });
+  // Also block wheel scrolling over the page (in case)
+  document.addEventListener('wheel', (e) => {
+    // allow wheel only inside the sidebar
+    if (!e.target.closest('.sidebar') && !e.target.closest('.chat-log')) e.preventDefault();
+  }, { passive: false });
+})();
+
+/* Auto-focus the EmulatorJS game container so keyboard input reaches it */
+function focusGame() {
+  try {
+    const parent = (window.EJS_emulator && window.EJS_emulator.elements && window.EJS_emulator.elements.parent) || document.getElementById('game');
+    if (parent) {
+      if (parent.tabIndex < 0) parent.tabIndex = 0;
+      parent.focus();
+      // hide the focus hint once we've focused
+      const hint = document.getElementById('focusHint');
+      if (hint) hint.classList.add('hide');
+    }
+  } catch(e) { console.warn('focusGame failed', e); }
+}
+
+/* Click anywhere on the game stage → focus the emulator */
+document.addEventListener('DOMContentLoaded', () => {
+  const stage = document.getElementById('gameStage');
+  if (stage) {
+    stage.addEventListener('mousedown', () => setTimeout(focusGame, 50));
+    stage.addEventListener('touchstart', () => setTimeout(focusGame, 50));
+  }
+  // Also hide the focus hint after first key press
+  document.addEventListener('keydown', () => {
+    const hint = document.getElementById('focusHint');
+    if (hint) hint.classList.add('hide');
+  }, { once: true });
+});
+
+function waitForCanvas() {
+  return new Promise((resolve, reject) => {
+    const start = Date.now();
+    const tick = () => {
+      const c = document.querySelector('#game canvas');
+      if (c) return resolve(c);
+      if (Date.now() - start > 60000) return reject(new Error('timeout'));
+      setTimeout(tick, 300);
+    };
+    tick();
+  });
+}
+
+/* ---------- PEERJS ROOMS ---------- */
+function genCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let s = '';
+  for (let i=0;i<6;i++) s += chars[Math.floor(Math.random()*chars.length)];
+  return s;
+}
+
+function createRoom() {
+  if (state.peer) cleanupSession();
+  const nick = document.getElementById('nick').value.trim() || 'Player1';
+  state.nick = nick;
+  const code = genCode();
+  const peerId = ROOM_PREFIX + code;
+  setStatus('Створюємо кімнату...', 'warn');
+  state.peer = new Peer(peerId, { debug: 1 });
+  state.peer.on('open', () => {
+    document.getElementById('roomCode').textContent = code;
+    document.getElementById('roomBox').classList.remove('hidden');
+    state.isHost = true;
+    setStatus('Кімната відкрита. Чекаємо гравця 2...', 'warn');
+    appendChat('SYSTEM', 'Кімната створена. Код: ' + code + '. Передай його другу.', 'sys');
+    appendChat('SYSTEM', 'Ти P1 (хост). Ти керуєш меню FIFA 97: Friendly → 2 Player. На екрані вибору команд друг (P2) обере свою на WASD+JKL.', 'sys');
+  });
+  state.peer.on('connection', (conn) => {
+    if (state.conn) { conn.close(); return; }
+    state.conn = conn;
+    bindConn(conn);
+  });
+  state.peer.on('error', (err) => {
+    console.error('peer err', err);
+    if (err.type === 'unavailable-id') {
+      setStatus('Колізія коду — спробуйте ще', 'err');
+    } else {
+      setStatus('Помилка: ' + err.type, 'err');
+    }
+  });
+}
+
+function joinRoom() {
+  if (state.peer) cleanupSession();
+  const nick = document.getElementById('nick').value.trim() || 'Player2';
+  const code = document.getElementById('joinCode').value.trim().toUpperCase();
+  if (code.length !== 6) {
+    setStatus('Код має 6 символів', 'err');
+    return;
+  }
+  state.nick = nick;
+  setStatus('Підключаємось до ' + code + '...', 'warn');
+  state.peer = new Peer({ debug: 1 });
+  state.peer.on('open', () => {
+    const conn = state.peer.connect(ROOM_PREFIX + code, { reliable: true, metadata: { nick } });
+    state.conn = conn;
+    bindConn(conn);
+    conn.on('open', () => {
+      conn.send({ t: 'hello', nick });
+      state.isHost = false;
+      setStatus('Підключено. Очікуємо відео від хоста...', 'warn');
+      // Hide local emulator canvas, show remote video element
+      document.getElementById('game').classList.add('hidden');
+      document.getElementById('remoteVideo').classList.remove('hidden');
+      document.getElementById('focusHint').classList.add('hide');
+      showOverlay('Очікуємо відео від хоста...');
+      document.getElementById('p2ctrl').classList.remove('hidden');
+      // Pause local emulator to save CPU (we're just watching host's stream)
+      try { if (window.EJS_emulator && window.EJS_emulator.pause) window.EJS_emulator.pause(); } catch(e){}
+      appendChat('SYSTEM', 'Ти P2 (клієнт). Хост керує меню FIFA 97. На екрані вибору команд — обери СВОЮ командуючи D-pad + A/B/C. Твої інпути йдуть хосту як P2.', 'sys');
+    });
+  });
+  state.peer.on('error', (err) => {
+    console.error('peer err', err);
+    if (err.type === 'peer-unavailable') {
+      setStatus('Кімнату не знайдено', 'err');
+    } else {
+      setStatus('Помилка: ' + err.type, 'err');
+    }
+  });
+}
+
+function copyCode() {
+  const code = document.getElementById('roomCode').textContent;
+  if (code === '------') return;
+  navigator.clipboard?.writeText(code).then(() => {
+    appendChat('SYSTEM', 'Код скопійовано: ' + code, 'sys');
+  });
+}
+
+function bindConn(conn) {
+  conn.on('data', (data) => onRemoteMsg(data));
+  conn.on('close', () => onPeerGone());
+  conn.on('error', (e) => { console.error('conn err', e); onPeerGone(); });
+}
+
+function sendMsg(obj) {
+  if (state.conn && state.conn.open) {
+    try { state.conn.send(obj); } catch(e) { console.warn('send fail', e); }
+  }
+}
+
+function onRemoteMsg(msg) {
+  if (!msg || !msg.t) return;
+  switch (msg.t) {
+    case 'hello':
+      state.oppNick = msg.nick || 'Player2';
+      appendChat('SYSTEM', state.oppNick + ' приєднався', 'sys');
+      if (state.isHost) {
+        sendMsg({ t: 'hello', nick: state.nick });
+        setStatus('Підключено: ' + state.oppNick + '. Тисніть Start у грі.', 'ok');
+        // canvas should already be running; start streaming now if emulator ready
+        const canvas = document.querySelector('#game canvas');
+        if (canvas) startMediaNegotiation();
+      }
+      break;
+    case 'webrtc-offer':
+      handleOffer(msg);
+      break;
+    case 'webrtc-answer':
+      handleAnswer(msg);
+      break;
+    case 'webrtc-ice':
+      handleRemoteIce(msg.candidate);
+      break;
+    case 'chat':
+      appendChat(msg.from, msg.text, msg.from === state.oppNick ? 'p2' : '');
+      break;
+    case 'input':
+      if (state.isHost) simulateKey(msg.key, msg.down);
+      break;
+    case 'leave':
+      onPeerGone();
+      break;
+  }
+}
+
+function onPeerGone() {
+  if (state.isHost === null) return;
+  appendChat('SYSTEM', 'Опонент вийшов', 'sys');
+  setStatus('Опонент вийшов. Повертаємось у соло.', 'err');
+  // reset to solo play if was client
+  if (state.isHost === false) {
+    document.getElementById('game').classList.remove('hidden');
+    document.getElementById('remoteVideo').classList.add('hidden');
+    document.getElementById('remoteVideo').srcObject = null;
+    document.getElementById('p2ctrl').classList.add('hidden');
+    // Resume local emulator
+    try { if (window.EJS_emulator && window.EJS_emulator.play) window.EJS_emulator.play(); } catch(e){}
+    showOverlay('Граємо соло');
+    setTimeout(() => { hideOverlay(); focusGame(); }, 1200);
+  }
+  try { if (state.conn) state.conn.close(); } catch(e){}
+  try { if (state.pc) state.pc.close(); } catch(e){}
+  state.conn = null;
+  state.pc = null;
+  state.isHost = null;
+  state.oppNick = '';
+}
+
+/* ---------- WEBRTC MEDIA (host streams canvas) ---------- */
+async function startMediaNegotiation() {
+  if (state.pc) return; // already negotiating
+  try {
+    const canvas = document.querySelector('#game canvas');
+    if (!canvas) { console.warn('no canvas to stream'); return; }
+    const stream = canvas.captureStream(30);
+    // try to add audio
+    try {
+      const audioEl = document.querySelector('#game audio') || document.querySelector('audio');
+      if (audioEl && audioEl.captureStream) {
+        const aStream = audioEl.captureStream();
+        aStream.getAudioTracks().forEach(t => stream.addTrack(t));
+      }
+    } catch(e) {}
+    state.mediaStream = stream;
+    const pc = new RTCPeerConnection({ iceServers: [
+      { urls: 'stun:stun.l.google.com:19302' },
+      { urls: 'stun:stun1.l.google.com:19302' }
+    ]});
+    state.pc = pc;
+    stream.getTracks().forEach(t => pc.addTrack(t, stream));
+    pc.onicecandidate = (e) => {
+      // Convert to plain object — PeerJS can't serialize RTCIceCandidate directly
+      if (e.candidate) sendMsg({ t: 'webrtc-ice', candidate: e.candidate.toJSON() });
+    };
+    const offer = await pc.createOffer();
+    await pc.setLocalDescription(offer);
+    // Convert to plain object — PeerJS can't serialize RTCSessionDescription
+    sendMsg({ t: 'webrtc-offer', sdp: pc.localDescription.toJSON() });
+    setStatus('Трансляція на ' + state.oppNick, 'ok');
+  } catch(e) {
+    console.error('media neg failed', e);
+  }
+}
+
+async function handleOffer(msg) {
+  const pc = new RTCPeerConnection({ iceServers: [
+    { urls: 'stun:stun.l.google.com:19302' },
+    { urls: 'stun:stun1.l.google.com:19302' }
+  ]});
+  state.pc = pc;
+  pc.onicecandidate = (e) => {
+    if (e.candidate) sendMsg({ t: 'webrtc-ice', candidate: e.candidate.toJSON() });
+  };
+  pc.ontrack = (e) => {
+    const v = document.getElementById('remoteVideo');
+    v.srcObject = e.streams[0];
+    v.classList.remove('hidden');
+    document.getElementById('game').classList.add('hidden');
+    hideOverlay();
+    setStatus('Відео від хоста отримано. Ти P2 — керуй D-pad + A/B/C!', 'ok');
+  };
+  await pc.setRemoteDescription(new RTCSessionDescription(msg.sdp));
+  const answer = await pc.createAnswer();
+  await pc.setLocalDescription(answer);
+  sendMsg({ t: 'webrtc-answer', sdp: pc.localDescription.toJSON() });
+}
+
+async function handleAnswer(msg) {
+  if (state.pc) {
+    try { await state.pc.setRemoteDescription(new RTCSessionDescription(msg.sdp)); } catch(e){ console.warn(e); }
+  }
+}
+
+async function handleRemoteIce(candidate) {
+  if (state.pc) {
+    try { await state.pc.addIceCandidate(new RTCIceCandidate(candidate)); } catch(e){ console.warn('ice add fail', e); }
+  }
+}
+
+/* ---------- INPUT FORWARDING (client → host) ---------- */
+// Unified button map: symbolic action → [player, button_id]
+// EMPIRICALLY VERIFIED Sega MD button IDs: A=9, B=0, C=8, Mode=2, Start=3, D-pad 4-7
+const BUTTON_MAP_LOCAL = {
+  'up':    [0, 4],  // P1, DPAD_UP
+  'down':  [0, 5],  // P1, DPAD_DOWN
+  'left':  [0, 6],  // P1, DPAD_LEFT
+  'right': [0, 7],  // P1, DPAD_RIGHT
+  'a':     [0, 9],  // P1, A button (Pass / Switch player)
+  'b':     [0, 0],  // P1, B button (Shoot / Slide tackle)
+  'c':     [0, 8],  // P1, C button (Through ball / Goalkeeper)
+  'start': [0, 3]   // P1, Start
+};
+
+// Unified press function: works for solo, host, and client
+// - Solo/Host: calls simulateInput locally (player 0)
+// - Client: sends symbolic action to host (host injects as player 1)
+function pressButton(sym, down) {
+  if (state.isHost === false && state.conn && state.conn.open) {
+    // Online client → forward to host
+    sendMsg({ t: 'input', key: sym, down });
+  } else {
+    // Solo or host → local simulateInput
+    const map = BUTTON_MAP_LOCAL[sym];
+    if (!map) return;
+    const [player, button] = map;
+    const value = down ? 1 : 0;
+    try {
+      if (window.EJS_emulator && window.EJS_emulator.gameManager) {
+        window.EJS_emulator.gameManager.simulateInput(player, button, value);
+      }
+    } catch(e) { console.warn('pressButton fail', e); }
+  }
+}
+
+// Keyboard listener for client (online mode only)
+// Client presses WASD+JKL+Space → send symbolic action to host
+const P2_KEY_MAP = {
+  'KeyW':'up','KeyA':'left','KeyS':'down','KeyD':'right',
+  'KeyJ':'a','KeyK':'b','KeyL':'c','Space':'start'
+};
+function isTypingInField() {
+  const t = document.activeElement;
+  const tag = t && t.tagName;
+  return tag === 'INPUT' || tag === 'TEXTAREA' || (t && t.isContentEditable);
+}
+document.addEventListener('keydown', (e) => {
+  if (state.isHost !== false) return;
+  if (!state.conn || !state.conn.open) return;
+  if (isTypingInField()) return;  // don't capture when typing in chat/nick
+  const sym = P2_KEY_MAP[e.code];
+  if (sym) {
+    e.preventDefault();
+    pressButton(sym, true);
+  }
+});
+document.addEventListener('keyup', (e) => {
+  if (state.isHost !== false) return;
+  if (!state.conn || !state.conn.open) return;
+  if (isTypingInField()) return;
+  const sym = P2_KEY_MAP[e.code];
+  if (sym) {
+    e.preventDefault();
+    pressButton(sym, false);
+  }
+});
+
+/* ---------- TOUCH CONTROLS (mobile) ---------- */
+function attachTouchButton(btn) {
+  const sym = btn.dataset.sym;
+  if (!sym) return;
+  let isPressed = false;
+  const press = (e) => {
+    e.preventDefault();
+    if (isPressed) return;
+    isPressed = true;
+    btn.classList.add('pressed');
+    pressButton(sym, true);
+  };
+  const release = (e) => {
+    e.preventDefault();
+    if (!isPressed) return;
+    isPressed = false;
+    btn.classList.remove('pressed');
+    pressButton(sym, false);
+  };
+  btn.addEventListener('touchstart', press, { passive: false });
+  btn.addEventListener('touchend', release, { passive: false });
+  btn.addEventListener('touchcancel', release, { passive: false });
+  btn.addEventListener('mousedown', press);
+  btn.addEventListener('mouseup', release);
+  btn.addEventListener('mouseleave', (e) => { if (isPressed) release(e); });
+  btn.addEventListener('contextmenu', (e) => e.preventDefault());
+}
+
+/* ---------- CIRCULAR D-PAD (8 directions) ---------- */
+// Touch anywhere on the circle → calculate angle from center → activate 1 or 2 directions.
+// Cardinal: up/down/left/right. Diagonal: up+left, up+right, down+left, down+right.
+function attachCircularDpad(elem) {
+  const stick = elem.querySelector('.dpad-stick');
+  const arrows = {
+    up:    elem.querySelector('.dpad-arrow-up'),
+    down:  elem.querySelector('.dpad-arrow-down'),
+    left:  elem.querySelector('.dpad-arrow-left'),
+    right: elem.querySelector('.dpad-arrow-right')
+  };
+  const diags = {
+    ur: elem.querySelector('.dpad-diag-ur'),
+    dr: elem.querySelector('.dpad-diag-dr'),
+    dl: elem.querySelector('.dpad-diag-dl'),
+    ul: elem.querySelector('.dpad-diag-ul')
+  };
+  let active = new Set();  // currently pressed directions
+  let touchId = null;      // track the specific touch
+
+  // Calculate which directions to activate based on touch position
+  function getDirections(x, y) {
+    const r = elem.getBoundingClientRect();
+    const cx = r.left + r.width / 2;
+    const cy = r.top + r.height / 2;
+    const dx = x - cx;
+    const dy = y - cy;
+    const dist = Math.sqrt(dx*dx + dy*dy);
+    const radius = r.width / 2;
+    // Dead zone in center (15% of radius) — no direction if too close to center
+    if (dist < radius * 0.15) return { dirs: [], dx: 0, dy: 0, dist: 0 };
+
+    // Normalize stick offset (max 35% of radius)
+    const maxOffset = radius * 0.35;
+    const sx = (dx / dist) * Math.min(dist, maxOffset);
+    const sy = (dy / dist) * Math.min(dist, maxOffset);
+
+    // Angle: 0° = right, 90° = up (screen Y inverted), 180° = left, 270° = down
+    // Using atan2(-dy, dx) because screen Y goes down
+    const angle = Math.atan2(-dy, dx) * 180 / Math.PI; // -180..180
+
+    const dirs = [];
+    // 8 sectors of 45° each
+    const a = ((angle % 360) + 360) % 360; // normalize to 0..360
+    if (a >= 337.5 || a < 22.5)       dirs.push('right');
+    else if (a >= 22.5  && a < 67.5)  { dirs.push('up'); dirs.push('right'); }
+    else if (a >= 67.5  && a < 112.5) dirs.push('up');
+    else if (a >= 112.5 && a < 157.5) { dirs.push('up'); dirs.push('left'); }
+    else if (a >= 157.5 && a < 202.5) dirs.push('left');
+    else if (a >= 202.5 && a < 247.5) { dirs.push('down'); dirs.push('left'); }
+    else if (a >= 247.5 && a < 292.5) dirs.push('down');
+    else if (a >= 292.5 && a < 337.5) { dirs.push('down'); dirs.push('right'); }
+
+    return { dirs, dx: sx, dy: sy, dist };
+  }
+
+  // Update pressed directions: release old, press new
+  function updateDirections(newDirs) {
+    // Release directions no longer active
+    active.forEach(d => {
+      if (!newDirs.includes(d)) {
+        pressButton(d, false);
+        active.delete(d);
+        if (arrows[d]) arrows[d].classList.remove('lit');
+      }
+    });
+    // Press new directions
+    newDirs.forEach(d => {
+      if (!active.has(d)) {
+        pressButton(d, true);
+        active.add(d);
+        if (arrows[d]) arrows[d].classList.add('lit');
+      }
+    });
+    // Light up diagonal indicators
+    Object.values(diags).forEach(el => el && el.classList.remove('lit'));
+    if (active.has('up') && active.has('right'))    diags.ur && diags.ur.classList.add('lit');
+    if (active.has('down') && active.has('right'))  diags.dr && diags.dr.classList.add('lit');
+    if (active.has('down') && active.has('left'))   diags.dl && diags.dl.classList.add('lit');
+    if (active.has('up') && active.has('left'))     diags.ul && diags.ul.classList.add('lit');
+  }
+
+  // Move the visual stick toward touch direction
+  function moveStick(dx, dy) {
+    if (stick) {
+      stick.style.transform = 'translate(' + dx + 'px, ' + dy + 'px)';
+    }
+  }
+  function resetStick() {
+    if (stick) stick.style.transform = 'translate(0, 0)';
+  }
+
+  function start(x, y) {
+    elem.classList.add('active');
+    const res = getDirections(x, y);
+    updateDirections(res.dirs);
+    moveStick(res.dx, res.dy);
+  }
+  function move(x, y) {
+    const res = getDirections(x, y);
+    updateDirections(res.dirs);
+    moveStick(res.dx, res.dy);
+  }
+  function end() {
+    elem.classList.remove('active');
+    updateDirections([]);
+    resetStick();
+  }
+
+  // Touch events
+  elem.addEventListener('touchstart', (e) => {
+    e.preventDefault();
+    if (touchId !== null) return;
+    const t = e.changedTouches[0];
+    touchId = t.identifier;
+    start(t.clientX, t.clientY);
+  }, { passive: false });
+
+  elem.addEventListener('touchmove', (e) => {
+    e.preventDefault();
+    if (touchId === null) return;
+    for (const t of e.changedTouches) {
+      if (t.identifier === touchId) {
+        move(t.clientX, t.clientY);
+        break;
+      }
+    }
+  }, { passive: false });
+
+  const endTouch = (e) => {
+    e.preventDefault();
+    if (touchId === null) return;
+    for (const t of e.changedTouches) {
+      if (t.identifier === touchId) {
+        touchId = null;
+        end();
+        break;
+      }
+    }
+  };
+  elem.addEventListener('touchend', endTouch, { passive: false });
+  elem.addEventListener('touchcancel', endTouch, { passive: false });
+
+  // Mouse events (desktop testing)
+  let mouseDown = false;
+  elem.addEventListener('mousedown', (e) => {
+    e.preventDefault();
+    mouseDown = true;
+    start(e.clientX, e.clientY);
+  });
+  elem.addEventListener('mousemove', (e) => {
+    if (!mouseDown) return;
+    move(e.clientX, e.clientY);
+  });
+  const endMouse = () => {
+    if (!mouseDown) return;
+    mouseDown = false;
+    end();
+  };
+  elem.addEventListener('mouseup', endMouse);
+  elem.addEventListener('mouseleave', endMouse);
+  elem.addEventListener('contextmenu', (e) => e.preventDefault());
+}
+
+function initTouchControls() {
+  // Action buttons (A/B/C/Start)
+  document.querySelectorAll('.t-btn[data-sym]').forEach(attachTouchButton);
+  // Circular D-pad
+  const dpad = document.getElementById('dpadCircle');
+  if (dpad) attachCircularDpad(dpad);
+}
+
+/* ---------- MOBILE SIDEBAR TOGGLE ---------- */
+function toggleSidebar(force) {
+  const sidebar = document.querySelector('.sidebar');
+  const backdrop = document.getElementById('sidebarBackdrop');
+  const open = (force === 'open') ? true : (force === 'close') ? false : !sidebar.classList.contains('open');
+  sidebar.classList.toggle('open', open);
+  backdrop.classList.toggle('show', open);
+}
+
+// Host: forward P2 input directly to emulator core via gameManager.simulateInput
+// EMPIRICALLY VERIFIED Sega MD button IDs: A=9, B=0, C=8, Mode=2, Start=3, D-pad 4-7
+const P2_BUTTON_MAP = {
+  'up':    [1, 4],  // P2, DPAD_UP
+  'down':  [1, 5],  // P2, DPAD_DOWN
+  'left':  [1, 6],  // P2, DPAD_LEFT
+  'right': [1, 7],  // P2, DPAD_RIGHT
+  'a':     [1, 9],  // P2, A button (Pass / Switch player)  ← FIXED
+  'b':     [1, 0],  // P2, B button (Shoot / Slide tackle)
+  'c':     [1, 8],  // P2, C button (Through ball / Goalkeeper)
+  'start': [1, 3]   // P2, Start
+};
+function simulateKey(sym, down) {
+  const map = P2_BUTTON_MAP[sym];
+  if (!map) return;
+  const [player, button] = map;
+  const value = down ? 1 : 0;
+  try {
+    if (window.EJS_emulator && window.EJS_emulator.gameManager) {
+      window.EJS_emulator.gameManager.simulateInput(player, button, value);
+    }
+  } catch(e) { console.warn('simulateKey fail', e); }
+}
+
+/* ---------- CHAT ---------- */
+function sendChat() {
+  const inp = document.getElementById('chatInput');
+  const txt = inp.value.trim();
+  if (!txt) return;
+  appendChat(state.nick || 'Я', txt, state.isHost === false ? 'p2' : '');
+  if (state.conn && state.conn.open) {
+    sendMsg({ t: 'chat', from: state.nick, text: txt });
+  }
+  inp.value = '';
+}
+
+/* ---------- LEAVE / CLEANUP ---------- */
+function leaveSession() {
+  sendMsg({ t: 'leave' });
+  cleanupSession();
+}
+function cleanupSession() {
+  try { if (state.conn) state.conn.close(); } catch(e){}
+  try { if (state.peer) state.peer.destroy(); } catch(e){}
+  try { if (state.pc) state.pc.close(); } catch(e){}
+  try { if (state.mediaStream) state.mediaStream.getTracks().forEach(t => t.stop()); } catch(e){}
+  state.conn = null;
+  state.peer = null;
+  state.pc = null;
+  state.mediaStream = null;
+  state.isHost = null;
+  state.oppNick = '';
+  document.getElementById('roomBox').classList.add('hidden');
+  document.getElementById('joinCode').value = '';
+  document.getElementById('game').classList.remove('hidden');
+  document.getElementById('remoteVideo').classList.add('hidden');
+  document.getElementById('remoteVideo').srcObject = null;
+  document.getElementById('p2ctrl').classList.add('hidden');
+  hideOverlay();
+  setStatus('Поза кімнатою', '');
+}
+
+/* ---------- GAME SELECTOR ---------- */
+function showGameSelector() {
+  const grid = document.getElementById('gamesGrid');
+  if (!grid) return;
+  grid.innerHTML = '';
+  GAMES.forEach(g => {
+    const card = document.createElement('div');
+    card.className = 'game-card' + (g.id === CURRENT_GAME.id ? ' current' : '');
+    card.innerHTML = `
+      <div class="emoji">${g.emoji}</div>
+      <div class="name">${g.name}</div>
+      <div class="genre">${g.genre}</div>
+      <div class="desc">${g.desc}</div>
+    `;
+    card.onclick = () => selectGame(g.id);
+    grid.appendChild(card);
+  });
+  document.getElementById('gameSelectorOverlay').classList.add('show');
+}
+
+function hideGameSelector() {
+  document.getElementById('gameSelectorOverlay').classList.remove('show');
+}
+
+function selectGame(id) {
+  // If same game, just close
+  if (id === CURRENT_GAME.id) {
+    hideGameSelector();
+    return;
+  }
+  // Reload page with ?game=<id> to load new ROM
+  const url = new URL(window.location.href);
+  url.searchParams.set('game', id);
+  window.location.href = url.toString();
+}
+
+// ROM upload — use a user-provided file
+function handleRomUpload(file) {
+  if (!file) return;
+  const ok = /\.(bin|smd|gen|md|zip)$/i.test(file.name);
+  if (!ok) {
+    appendChat('SYSTEM', 'Невірний формат. Очікуємо .bin/.smd/.gen/.md/.zip', 'sys');
+    return;
+  }
+  // Store the file in sessionStorage so it survives the page reload
+  // (can't pass a Blob across reload, so we use a different approach:
+  // load the ROM directly into the existing emulator if possible,
+  // or reload and pass via sessionStorage as base64)
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      sessionStorage.setItem('uploadedRom', JSON.stringify({
+        name: file.name,
+        data: Array.from(new Uint8Array(reader.result))
+      }));
+    } catch(e) {
+      appendChat('SYSTEM', 'ROM занадто великий для sessionStorage. Використай URL-параметр.', 'sys');
+      return;
+    }
+    // Reload without ?game= so the uploaded ROM is used
+    const url = new URL(window.location.href);
+    url.searchParams.delete('game');
+    url.searchParams.set('uploaded', '1');
+    window.location.href = url.toString();
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+/* ---------- INIT ---------- */
+window.addEventListener('DOMContentLoaded', () => {
+  // Update page title with current game
+  document.getElementById('pageTitle').textContent = CURRENT_GAME.emoji + ' ' + CURRENT_GAME.name;
+
+  // Random default nick
+  const def = 'Player' + Math.floor(Math.random()*90+10);
+  document.getElementById('nick').value = def;
+  state.nick = def;
+  setStatus('Грається соло. Створіть кімнату для онлайн-гри.', '');
+  // Auto-start emulator
+  launchEmulator();
+  // Init touch controls (mobile)
+  initTouchControls();
+  // Mobile sidebar toggle
+  const mt = document.getElementById('menuToggle');
+  if (mt) mt.addEventListener('click', () => toggleSidebar());
+  const bd = document.getElementById('sidebarBackdrop');
+  if (bd) bd.addEventListener('click', () => toggleSidebar('close'));
+  // ROM upload handler
+  const ru = document.getElementById('romUpload');
+  if (ru) ru.addEventListener('change', () => {
+    if (ru.files && ru.files[0]) handleRomUpload(ru.files[0]);
+  });
+  // Close sidebar/selector on Escape
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') {
+      toggleSidebar('close');
+      hideGameSelector();
+    }
+  });
+  // Greet
+  appendChat('SYSTEM', 'Гра: ' + CURRENT_GAME.name + '. Для онлайн-гри створіть кімнату.', 'sys');
+});
+</script>
+</body>
+</html>
