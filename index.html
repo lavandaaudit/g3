@@ -878,7 +878,7 @@
 
 const EJS_VERSION = '4.2.3';
 const EJS_BASE = `https://cdn.jsdelivr.net/gh/EmulatorJS/EmulatorJS@${EJS_VERSION}/data/`;
-const ROOM_PREFIX = 'g3-' + CURRENT_GAME.id + '-';   // кімнати різних ігор не перетинаються
+// ROOM_PREFIX оголошується нижче — після CURRENT_GAME (який визначається пізніше тут)
 
 /* ---------- GAME LIBRARY ---------- */
 const GAMES = [
@@ -920,6 +920,8 @@ function getCurrentGame() {
 }
 const CURRENT_GAME = getCurrentGame();
 const DEFAULT_ROM_URL = CURRENT_GAME.rom;
+// Кімнати нетплею ізольовані по грі — різні ігри ніколи не перетинаються в одному peer-ID
+const ROOM_PREFIX = 'g3-' + CURRENT_GAME.id + '-';
 
 /* ---------- STATE ---------- */
 const state = {
